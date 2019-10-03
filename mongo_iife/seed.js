@@ -8,11 +8,19 @@ const Event = require('./models/Event');
 
 var ownerIds = [];
 var userIds = [];
+var eventIds = [];
 
 createOwners()
 .then(ownerIdArr => ownerIds = ownerIdArr)
 .then(createUsers)
 .then(userIdArr => userIds = userIdArr)
+.then(() => createEvents(ownerIds, userIds))
+.then(eventIdsArr => eventIds = eventIdsArr)
+.then(() => createGroups(ownerIds, userIds, eventIds))
+.then(() => {
+    console.log('Finito de database seeding!');
+    process.exit(1);
+})
 
 
 function createOwners() {
@@ -58,8 +66,48 @@ function createUsers() {
 }
 
 
+function createEvents(ownerIdsArr, userIdsArr) {
+    return new Promise((resolve, reject) => {
+        var eventIds = [];
 
+        for (var i = 1; i <= 3; ++i) {
+            (function() {
+                var ind = i;
 
+                Event.create({
+                    name: `event-${i}`,
+                    attendees: [ownerIdsArr[i], userIdsArr[i]]
+                }, (err, createdEvent) => {
+                    eventIds[ind] = createdEvent._id;
+
+                    if (ind == 3)
+                        resolve(eventIds);
+                })
+            })()
+        } 
+    })
+}
+
+function createGroups(ownerIdsArr, userIdsArr, eventIdsArr) {
+    return new Promise((resolve, reject) => {
+        
+        for (var i = 1; i <= 3; ++i) {
+            (function() {
+                var ind = i;
+
+                Group.create({
+                    name: `group-${i}`,
+                    owner: ownerIdsArr[i],
+                    members: [userIdsArr[i]],
+                    events: [eventIdsArr[i]]
+                }, (err, createdGroup) => {
+                    if (ind == 3)
+                        resolve(true)
+                })
+            })()
+        }
+    })
+}
 
 
 
